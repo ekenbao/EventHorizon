@@ -61,7 +61,7 @@
         <div class="loader"></div>
     </div>
 
-    <video controls autoplay muted>
+    <video controls>
         <source src="Event Horizon.mp4" type="video/mp4">
         抱歉，你的浏览器不支持视频播放。
     </video>
@@ -77,6 +77,14 @@
                 loaderContainer.style.display = 'none';
                 video.style.opacity = '1';
             }, 500);
+        });
+
+       
+
+        // 确保播放时取消静音
+        video.addEventListener('play', function() {
+            video.muted = false;
+            video.volume = 1;
         });
     </script>
 </body>
