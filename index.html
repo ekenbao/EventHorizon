@@ -47,12 +47,42 @@
         }
         
         video {
-            max-width: 80%;
-            max-height: 80%;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
-        }
+    max-width: 80%;
+    max-height: 80%;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
+}
+
+.download-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+    transition: transform 0.3s ease, background-color 0.4s ease, border-color 0.4s ease;
+}
+
+.download-button:hover {
+    transform: scale(1.1);
+}
+
+.download-button:active {
+    transform: scale(1);
+}
+
+.download-icon {
+    width: 14px;
+    height: 14px;
+    transition: opacity 0.4s ease;
+}
     </style>
 </head>
 <body>
@@ -61,8 +91,9 @@
         <div class="loader"></div>
     </div>
 
-    <video controls>
+    <video controls playsinline muted preload="auto">
         <source src="Event Horizon.mp4" type="video/mp4">
+        <source src="Event Horizon.mp4" type="video/webm">
         抱歉，你的浏览器不支持视频播放。
     </video>
 
@@ -83,10 +114,74 @@
 
         // 确保播放时取消静音
         video.addEventListener('play', function() {
-            video.muted = false;
-            video.volume = 1;
+            setTimeout(function() {
+                video.muted = false;
+                video.volume = 1;
+            }, 100);
         });
+        
+        // 移动端触摸播放支持
+        video.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        }, false);
+        
+        // 移动端手势控制音量
+        let touchStartY = 0;
+        video.addEventListener('touchstart', function(e) {
+            if (e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+            }
+        }, false);
+        
+        video.addEventListener('touchmove', function(e) {
+            if (e.touches.length === 1) {
+                const touchY = e.touches[0].clientY;
+                const diff = touchStartY - touchY;
+                
+                // 垂直滑动调整音量
+                if (Math.abs(diff) > 10) {
+                    const volumeChange = diff / 200;
+                    const newVolume = Math.max(0, Math.min(1, video.volume + volumeChange));
+                    video.volume = newVolume;
+                    touchStartY = touchY;
+                }
+            }
+        }, false);
     </script>
-    <div style='position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 10px; color: #222;'>粤ICP备2025451226号</div>
+    <a href='Event_Horizon.app.zip' class='download-button' download id="downloadBtn">
+            <img src='download.svg' alt='Download' class='download-icon' id="downloadIcon">
+        </a>
+        <script>
+            document.getElementById('downloadBtn').addEventListener('click', function(e) {
+                var btn = this;
+                var icon = document.getElementById('downloadIcon');
+                
+                // 图标淡出
+                icon.style.opacity = '0';
+                
+                // 等待淡出完成后切换图标并淡入
+                setTimeout(function() {
+                    // 切换图标
+                    icon.src = 'finish.svg';
+                    icon.alt = 'Finished';
+                    
+                    // 图标淡入
+                    icon.style.opacity = '1';
+                }, 300);
+                
+                // 更改按钮样式（会有平滑过渡）
+                btn.style.backgroundColor = 'rgba(170, 255, 132, 0.1)';
+                btn.style.borderColor = 'rgba(128, 255, 70, 0.2)';
+                
+                // 禁用按钮防止重复点击
+                btn.disabled = true;
+            });
+        </script>
+    <div style='position: absolute; bottom: 10px; left: 0; width: 100%; text-align: center; font-size: 12px; color: #222;'>粤ICP备2025451226号</div>
 </body>
 </html>
