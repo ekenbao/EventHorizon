@@ -91,9 +91,8 @@
         <div class="loader"></div>
     </div>
 
-    <video controls playsinline muted preload="auto">
+    <video controls>
         <source src="Event Horizon.mp4" type="video/mp4">
-        <source src="Event Horizon.mp4" type="video/webm">
         抱歉，你的浏览器不支持视频播放。
     </video>
 
@@ -114,44 +113,9 @@
 
         // 确保播放时取消静音
         video.addEventListener('play', function() {
-            setTimeout(function() {
-                video.muted = false;
-                video.volume = 1;
-            }, 100);
+            video.muted = false;
+            video.volume = 1;
         });
-        
-        // 移动端触摸播放支持
-        video.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            if (video.paused) {
-                video.play();
-            } else {
-                video.pause();
-            }
-        }, false);
-        
-        // 移动端手势控制音量
-        let touchStartY = 0;
-        video.addEventListener('touchstart', function(e) {
-            if (e.touches.length === 1) {
-                touchStartY = e.touches[0].clientY;
-            }
-        }, false);
-        
-        video.addEventListener('touchmove', function(e) {
-            if (e.touches.length === 1) {
-                const touchY = e.touches[0].clientY;
-                const diff = touchStartY - touchY;
-                
-                // 垂直滑动调整音量
-                if (Math.abs(diff) > 10) {
-                    const volumeChange = diff / 200;
-                    const newVolume = Math.max(0, Math.min(1, video.volume + volumeChange));
-                    video.volume = newVolume;
-                    touchStartY = touchY;
-                }
-            }
-        }, false);
     </script>
     <a href='Event_Horizon.app.zip' class='download-button' download id="downloadBtn">
             <img src='download.svg' alt='Download' class='download-icon' id="downloadIcon">
