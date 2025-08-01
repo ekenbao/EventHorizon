@@ -28,16 +28,16 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 16vw;
-            min-width: 178px;
-            max-width: 200px;
+            width: 20vw;
+            min-width: 200px;
+            max-width: 226px;
             border: none;
             background: none;
             padding: 0;
             cursor: pointer;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.4s ease;/*, transform 0.4s ease*/
             z-index: 1000;
-            opacity: 0.8;
+            opacity: 0.4;
         }
 
         @media (max-width: 800px) {
@@ -50,6 +50,7 @@
 
         .jump-button:hover {
             opacity: 1;
+            /* transform: scale(1.04); */
         }
 
         @media (max-width: 800px) {
@@ -62,6 +63,7 @@
         .jump-button:active,
         .jump-button:focus {
             opacity: 0.8;
+            /* transform: scale(1); */
         }
 
         .jump-button img {
