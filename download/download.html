@@ -82,8 +82,8 @@
 
         .download-card {
             background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 1.6rem;
+            border-radius: 20px;
+            padding: 1.4rem;
             max-width: 380px;
             width: 90%;
             min-width: 280px;
@@ -101,12 +101,11 @@
         .file-info {
             display: flex;
             align-items: center;
-            margin-bottom: 1.8rem;
+            margin-bottom: 1.4rem;
         }
 
         .file-icon {
-            margin-right: 1rem;
-            border-radius: 12px;
+            margin-right: 0.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -123,7 +122,7 @@
 
         .file-details p {
             color: #444;
-            font-size: clamp(0.8rem, 3vw, 0.9rem);
+            font-size: clamp(0.9rem, 3vw, 1rem);
             opacity: 0.8;
         }
 
@@ -186,7 +185,7 @@
                 <div class="download-card">
                     <div class="file-info">
                         <div class="file-icon">
-                            <img src="Logo.png" alt="Event Horizon Logo" style="width: clamp(68px, 10vw, 69px) !important; height: clamp(68px, 10vw, 69px) !important; object-fit: contain;">
+                            <img src="Logo.png" alt="Event Horizon Logo" style="width: clamp(68px, 10vw, 69px) !important; height: clamp(68px, 10vw, 69px) !important; object-fit: contain; border-radius: 12px !important;">
                         </div>
                         <div class="file-details">
                             <h3>Event Horizon for Mac</h3>
@@ -209,8 +208,6 @@
     <script>
         // 下载按钮点击效果
         document.getElementById('downloadButton').addEventListener('click', function(e) {
-            e.preventDefault(); // 阻止默认下载行为，仅用于演示效果
-            
             const button = this;
             const feedbackMessage = document.getElementById('feedbackMessage');
             
