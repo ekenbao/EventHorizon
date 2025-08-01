@@ -83,10 +83,10 @@
         .download-card {
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
-            padding: 2rem;
-            max-width: 400px;
+            padding: 1.6rem;
+            max-width: 380px;
             width: 90%;
-            min-width: 260px;
+            min-width: 280px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.4s ease, box-shadow 0.4s ease;
@@ -101,14 +101,11 @@
         .file-info {
             display: flex;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.8rem;
         }
 
         .file-icon {
-            width: clamp(50px, 10vw, 64px) !important;
-            height: clamp(50px, 10vw, 64px) !important;
-            margin-right: 1.5rem;
-            background-color: #1a1a1a;
+            margin-right: 1rem;
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -119,33 +116,36 @@
         
 
         .file-details h3 {
-            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            font-size: clamp(1.3rem, 3vw, 1.4rem);
             margin-bottom: 0.25rem;
             opacity: 0.8;
         }
 
         .file-details p {
-            color: #aaa;
-            font-size: clamp(0.8rem, 2vw, 0.9rem);
+            color: #444;
+            font-size: clamp(0.8rem, 3vw, 0.9rem);
             opacity: 0.8;
         }
 
         .download-btn {
             display: block;
             width: 100%;
-            padding: clamp(0.8rem, 3vw, 1rem);
+            padding: clamp(0.8rem, 3vw, 0.9rem);
             background-color: #D23A24;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: clamp(0.9rem, 3vw, 1rem);
-            font-weight: 400;
+            font-size: clamp(0.9rem, 3vw, 0.9rem);
+            font-weight: 480;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
             text-align: center;
             text-decoration: none;
             opacity: 0.8;
-            transition: opacity 0.4s ease;
+            transition: all 0.6s ease;
+        }
+
+        .download-btn.clicked {
+            background-color: #666;
         }
 
         .download-btn:hover {
@@ -186,16 +186,17 @@
                 <div class="download-card">
                     <div class="file-info">
                         <div class="file-icon">
-                            <img src="Logo.png" alt="Event Horizon Logo" style="width: 66px !important; height: 66px !important; object-fit: contain;">
+                            <img src="Logo.png" alt="Event Horizon Logo" style="width: clamp(68px, 10vw, 69px) !important; height: clamp(68px, 10vw, 69px) !important; object-fit: contain;">
                         </div>
                         <div class="file-details">
                             <h3>Event Horizon for Mac</h3>
                             <p>MacOS 14.0+ </p>
                         </div>
                     </div>
-                    <a href="EventHorizon_for_mac.zip" class="download-btn">立即下载</a>
-    
+                    <a href="EventHorizon_for_mac.zip" class="download-btn" id="downloadButton">立即下载</a>
+
                 </div>
+                <div id="feedbackMessage" style="margin-top: 1rem; text-align: center; color: #444; font-size: 0.8rem; opacity: 0; transition: opacity 0.6s ease;">意见反馈：ekenbao@gmail.com</div>
 
                 <!-- 可以添加其他平台的下载选项 -->
             </section>
@@ -206,6 +207,24 @@
     <button class="back-button" onclick="window.location.href='../index.html'">←</button>
 
     <script>
+        // 下载按钮点击效果
+        document.getElementById('downloadButton').addEventListener('click', function(e) {
+            e.preventDefault(); // 阻止默认下载行为，仅用于演示效果
+            
+            const button = this;
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            
+            // 延迟1秒执行
+            setTimeout(function() {
+                // 更改按钮文本和样式
+                button.textContent = '重新下载';
+                button.classList.add('clicked');
+                
+                // 显示反馈信息
+                feedbackMessage.style.opacity = '1';
+            }, 1000);
+        });
+        
         // 可以添加下载统计或其他交互逻辑
         document.querySelector('.download-btn').addEventListener('click', function() {
             console.log('开始下载应用程序');
