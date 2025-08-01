@@ -19,7 +19,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: opacity 0.4s ease, background-color 0.3s ease;
+            transition: opacity 0.4s ease, background-color 0.4s ease;
             z-index: 1000;
             font-size: 1.2rem;
         }
@@ -84,7 +84,9 @@
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 2rem;
-            width: 400px;
+            max-width: 400px;
+            width: 90%;
+            min-width: 260px;
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.4s ease, box-shadow 0.4s ease;
@@ -103,8 +105,8 @@
         }
 
         .file-icon {
-            width: 64px !important;
-            height: 64px !important;
+            width: clamp(50px, 10vw, 64px) !important;
+            height: clamp(50px, 10vw, 64px) !important;
             margin-right: 1.5rem;
             background-color: #1a1a1a;
             border-radius: 12px;
@@ -117,33 +119,33 @@
         
 
         .file-details h3 {
-            font-size: 1.5rem;
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
             margin-bottom: 0.25rem;
             opacity: 0.8;
         }
 
         .file-details p {
             color: #aaa;
-            font-size: 0.9rem;
+            font-size: clamp(0.8rem, 2vw, 0.9rem);
             opacity: 0.8;
         }
 
         .download-btn {
             display: block;
             width: 100%;
-            padding: 1rem;
+            padding: clamp(0.8rem, 3vw, 1rem);
             background-color: #D23A24;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: clamp(0.9rem, 3vw, 1rem);
             font-weight: 400;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
             text-align: center;
             text-decoration: none;
             opacity: 0.8;
-             transition: opacity 0.4s ease;
+            transition: opacity 0.4s ease;
         }
 
         .download-btn:hover {
@@ -191,7 +193,7 @@
                             <p>MacOS 14.0+ </p>
                         </div>
                     </div>
-                    <a href="download/EventHorizon_for_mac.zip" class="download-btn">立即下载</a>
+                    <a href="EventHorizon_for_mac.zip" class="download-btn">立即下载</a>
     
                 </div>
 
