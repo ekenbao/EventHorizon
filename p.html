@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EKen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script language="javascript">
+var noPrint=true;
+var noCopy=true;
+var noScreenshot=true;
+var autoBlur=true;
+var noDevTools=true;
+var noSaveAs=true;
+</script>
+
+<script type="text/javascript" src="noprint.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#6B7280',
+                        dark: '#1F2937',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        /* 设置基础字体大小，用于rem单位计算 */
+        html {
+            font-size: calc(10px + 0.25vw);
+        }
+        
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .modal-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 50;
+                opacity: 0;
+                visibility: hidden;
+                /* 移除过渡动画 */
+            }
+            .modal-backdrop.active {
+                opacity: 1;
+                visibility: visible;
+            }
+            .modal-content {
+                max-width: 96vw;
+                max-height: 96vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                /* 移除过渡动画 */
+                transform: scale(1); /* 始终保持原始大小 */
+                border-radius: 0.7vw; /* 使用vw单位实现响应式圆角 */
+                aspect-ratio: 288/167; /* 设置宽高比为2880:1670 */
+                background-color: transparent; /* 确保背景透明 */
+                overflow: hidden; /* 防止内容溢出 */
+            }
+            /* 移除激活状态的缩放效果 */
+            .modal-backdrop.active .modal-content {
+                transform: scale(1); /* 保持原始大小 */
+            }
+            
+            /* 加载动画样式 */
+            .loading-spinner {
+                border: 5px solid rgba(255, 255, 255, 0.2); /* 20%不透明度的细线 */
+                border-top: 5px solid rgba(255, 255, 255, 0.6); /* 60%不透明度的粗线 */
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                margin-top: -25px;
+                margin-left: -25px;
+                z-index: 100;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        }
+    </style>
+<body class="bg-black font-inter min-h-screen">
+
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- 移除了多图预览功能，直接显示模态框 -->
+    </main>
+
+    <div id="modal" class="modal-backdrop">
+        <!-- EP图片容器将通过JavaScript动态创建 -->
+    </div>
+
+    <script>
+        // 图片数量（只保留EP图片）
+        const totalImages = 33; // 现在有33个EP文件夹（01-33）
+        const modal = document.getElementById('modal');
+        let currentImageIndex = 0;
+        
+        // 用于存储已预加载的图片
+        const preloadedImages = new Set();
+        
+        // 用于存储已加载的EP小块图片
+        const loadedEpParts = {};
+        
+        // 加载EP小块图片的函数 - 所有图片都是20x20格式
+        function loadEpParts(folderName, totalParts) {
+            console.log(`开始加载EP/${folderName}，共${totalParts}个部分`);
+            
+            if (loadedEpParts[folderName]) {
+                console.log(`EP/${folderName}已缓存，直接返回`);
+                return Promise.resolve(loadedEpParts[folderName]);
+            }
+            
+            return new Promise((resolve, reject) => {
+                const parts = [];
+                let loadedCount = 0;
+                let hasSuccessfulLoad = false;
+                let retryQueue = [];
+                const maxRetries = 2; // 最多重试2次
+                
+                // 添加超时机制，避免长时间等待
+                const timeoutId = setTimeout(() => {
+                    console.warn(`EP/${folderName}加载超时，已加载${loadedCount}个部分`);
+                    if (hasSuccessfulLoad) {
+                        loadedEpParts[folderName] = parts;
+                        resolve(parts);
+                    } else {
+                        reject(new Error(`EP/${folderName}加载超时，无成功加载的部分`));
+                    }
+                }, 20000); // 增加超时时间到20秒
+                
+                // 顺序加载小图片，减轻服务器压力
+                const loadPart = (index, retryCount = 0) => {
+                    if (index > totalParts) return;
+                    
+                    const partPath = `EP/${folderName}/${index}.png`;
+                    
+                    // 移除时间戳，允许浏览器缓存
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        console.log(`成功加载${index} for EP/${folderName}`);
+                        parts[index - 1] = img;
+                        loadedCount++;
+                        hasSuccessfulLoad = true;
+                        
+                        if (loadedCount === totalParts) {
+                            clearTimeout(timeoutId);
+                            loadedEpParts[folderName] = parts;
+                            console.log(`EP/${folderName}所有部分加载完成`);
+                            resolve(parts);
+                        } else {
+                            // 加载下一个部分
+                            loadPart(index + 1);
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        console.error(`Failed to load ${index} for EP/${folderName}, retryCount: ${retryCount}`);
+                        
+                        if (retryCount < maxRetries) {
+                            // 添加到重试队列，稍后重试
+                            retryQueue.push(() => loadPart(index, retryCount + 1));
+                            loadPart(index + 1);
+                        } else {
+                            // 重试次数用尽，标记为加载失败
+                            parts[index - 1] = null;
+                            loadedCount++;
+                            
+                            if (loadedCount === totalParts) {
+                                // 所有部分都已处理，检查重试队列
+                                if (retryQueue.length > 0) {
+                                    // 延迟重试失败的部分
+                                    setTimeout(() => {
+                                        const retryTask = retryQueue.shift();
+                                        retryTask();
+                                    }, 1000);
+                                } else {
+                                    clearTimeout(timeoutId);
+                                    loadedEpParts[folderName] = parts;
+                                    console.log(`EP/${folderName}所有部分加载完成（包含失败项）`);
+                                    resolve(parts);
+                                }
+                            } else {
+                                // 继续加载下一个部分
+                                loadPart(index + 1);
+                            }
+                        }
+                    };
+                    
+                    // 设置src开始加载
+                    img.src = partPath;
+                };
+                
+                // 开始加载第一个部分
+                loadPart(1);
+            });
+        }
+        
+        // 创建EP图片容器（使用多个小块图片模拟完整图片）
+        // 所有图片都是20x20的网格布局
+        function createEpImageContainer(folderName, totalParts, containerWidth, containerHeight, loadingSpinner) {
+            // 所有文件夹统一使用20x20的网格布局
+            const cols = 20; // 20列
+            const rows = 20; // 20行
+            
+            const container = document.createElement('div');
+              container.style.position = 'relative';
+              container.style.overflow = 'hidden';
+              container.style.margin = '0 auto';
+              container.style.opacity = '0'; // 初始隐藏，所有图片加载完成后再显示
+              container.style.transition = 'opacity 0.5s ease'; // 添加淡入效果
+              
+              // 计算每个小块的尺寸并取整，确保像素对齐
+              const partWidth = Math.floor(containerWidth / cols);
+              const partHeight = Math.floor(containerHeight / rows);
+              
+              // 重新计算实际容器尺寸，确保能被行列数整除
+              const actualContainerWidth = partWidth * cols;
+              const actualContainerHeight = partHeight * rows;
+              
+              // 使用重新计算的实际容器尺寸
+              container.style.width = `${actualContainerWidth}px`;
+              container.style.height = `${actualContainerHeight}px`;
+            
+            // 创建小块图片的占位符
+            for (let i = 0; i < totalParts; i++) {
+                const partDiv = document.createElement('div');
+                partDiv.style.position = 'absolute';
+                partDiv.style.width = `${partWidth}px`;
+                partDiv.style.height = `${partHeight}px`;
+                partDiv.style.left = `${(i % cols) * partWidth}px`;
+                partDiv.style.top = `${Math.floor(i / cols) * partHeight}px`;
+                partDiv.style.overflow = 'hidden';
+                partDiv.dataset.partIndex = i;
+                partDiv.style.opacity = '0'; // 初始隐藏，图片加载完成后再显示
+                
+                container.appendChild(partDiv);
+            }
+            
+            // 加载并填充小块图片 - 改进Chrome兼容性
+            loadEpParts(folderName, totalParts).then(parts => {
+                const partDivs = container.querySelectorAll('[data-part-index]');
+                let loadedCount = 0;
+                const totalPartsCount = parts.length;
+                const loadedImages = []; // 存储已加载的图片元素
+                
+                // 先加载所有图片到内存，但不显示
+                parts.forEach((img, index) => {
+                    if (partDivs[index]) {
+                        if (img) {
+                            // 创建新的图片元素
+                            const imgElement = new Image();
+                            imgElement.src = img.src;
+                            imgElement.style.width = '100%';
+                            imgElement.style.height = '100%';
+                            imgElement.style.objectFit = 'cover';
+                            imgElement.style.display = 'none'; // 暂时隐藏
+                            
+                            loadedImages[index] = { element: imgElement, partDiv: partDivs[index] };
+                        } else {
+                            // 对于加载失败的部分，准备显示灰色背景
+                            loadedImages[index] = { element: null, partDiv: partDivs[index] };
+                        }
+                        
+                        // 检查是否所有图片都已处理完成
+                        loadedCount++;
+                        
+                        if (loadedCount === totalPartsCount) {
+                            // 所有图片都已处理完成，现在统一显示
+                            showAllParts(loadedImages, loadingSpinner, container);
+                        }
+                    }
+                });
+            }).catch(err => {
+                console.error(`Failed to load EP/${folderName}:`, err);
+                // 在捕获到错误时，显示灰色背景和加载失败提示
+                const partDivs = container.querySelectorAll('[data-part-index]');
+                partDivs.forEach(div => {
+                    div.style.backgroundColor = 'rgba(50, 50, 50, 0.5)';
+                });
+                
+                // 显示容器并隐藏加载动画
+                container.style.opacity = '1';
+                if (loadingSpinner) {
+                    loadingSpinner.style.display = 'none';
+                }
+            });
+            
+            // 批量显示所有部分的函数
+            function showAllParts(loadedImages, loadingSpinner, container) {
+                // 先将所有图片添加到DOM
+                loadedImages.forEach(item => {
+                    if (item.partDiv) {
+                        if (item.element) {
+                            // 添加图片元素
+                            item.partDiv.innerHTML = '';
+                            item.partDiv.appendChild(item.element);
+                            item.element.style.display = 'block';
+                        } else {
+                            // 显示灰色背景
+                            item.partDiv.style.backgroundColor = 'rgba(50, 50, 50, 0.5)';
+                        }
+                        // 设置部分可见
+                        item.partDiv.style.opacity = '1';
+                    }
+                });
+                
+                // 显示整个容器
+                setTimeout(() => {
+                    container.style.opacity = '1';
+                    // 隐藏加载动画
+                    if (loadingSpinner) {
+                        loadingSpinner.style.display = 'none';
+                    }
+                }, 100); // 小延迟以确保所有元素都已准备好
+            }
+            
+            return container;
+        }
+        
+        // 智能预加载函数：优先加载当前图片，同时预加载前后各三张图片
+        function smartPreloadImages(index) {
+            // 清除之前的预加载任务
+            if (window.currentPreloadTasks) {
+                window.currentPreloadTasks.forEach(task => {
+                    if (task && task.abort) {
+                        task.abort();
+                    }
+                });
+            }
+            window.currentPreloadTasks = [];
+            
+            // 创建顺序预加载队列
+            const preloadQueue = [];
+            const preloadCount = 3;
+            
+            // 先添加当前和后面的图片到队列（优先顺序）
+            for (let i = 0; i <= preloadCount; i++) {
+                const nextIndex = (index + i) % totalImages;
+                const folderName = (nextIndex + 1).toString().padStart(2, '0');
+                if (!preloadedImages.has(folderName)) {
+                    preloadQueue.push({folder: folderName, index: nextIndex});
+                }
+            }
+            
+            // 如果队列未满，再添加前面的图片
+            let i = 1;
+            while (i <= preloadCount * 2 && preloadQueue.length < preloadCount * 3) {
+                const prevIndex = (index - i + totalImages) % totalImages;
+                const folderName = (prevIndex + 1).toString().padStart(2, '0');
+                if (!preloadedImages.has(folderName)) {
+                    preloadQueue.push({folder: folderName, index: prevIndex});
+                }
+                i++;
+            }
+            
+            console.log(`预加载图片队列: ${preloadQueue.map(item => item.folder).join(', ')}`);
+            
+            // 标记当前图片为已预加载
+            const currentFolder = (index + 1).toString().padStart(2, '0');
+            preloadedImages.add(currentFolder);
+            
+            // 开始顺序预加载队列中的图片
+            startSequentialPreload(preloadQueue);
+        }
+        
+        // 顺序预加载图片队列
+        function startSequentialPreload(imageQueue) {
+            if (imageQueue.length === 0) return;
+            
+            let currentIndex = 0;
+            
+            function loadNextImage() {
+                if (currentIndex >= imageQueue.length) return;
+                
+                const imageInfo = imageQueue[currentIndex];
+                currentIndex++;
+                
+                // 使用新的预加载请求，但添加完成回调以加载下一张
+                const controller = new AbortController();
+                const signal = controller.signal;
+                
+                const task = {
+                    imageInfo: imageInfo,
+                    abort: () => controller.abort()
+                };
+                
+                window.currentPreloadTasks.push(task);
+                
+                // 创建带AbortSignal的fetch请求
+                const fetchWithSignal = async (folderName, totalParts) => {
+                    return new Promise((resolve, reject) => {
+                        // 复制原始loadEpParts的逻辑，但添加信号检测
+                        if (signal.aborted) {
+                            return reject(new Error('Aborted'));
+                        }
+                        
+                        const parts = [];
+                        let loadedCount = 0;
+                        let hasSuccessfulLoad = false;
+                        
+                        signal.addEventListener('abort', () => {
+                            reject(new Error('Aborted'));
+                        });
+                        
+                        const loadPart = (index) => {
+                            if (signal.aborted) return;
+                            
+                            const partPath = `EP/${folderName}/${index}.png`;
+                            const img = new Image();
+                            
+                            img.onload = function() {
+                                if (signal.aborted) return;
+                                
+                                parts[index - 1] = img;
+                                loadedCount++;
+                                hasSuccessfulLoad = true;
+                                
+                                if (loadedCount === totalParts) {
+                                    loadedEpParts[folderName] = parts;
+                                    resolve(parts);
+                                } else {
+                                    loadPart(index + 1);
+                                }
+                            };
+                            
+                            img.onerror = function() {
+                                if (signal.aborted) return;
+                                
+                                parts[index - 1] = null;
+                                loadedCount++;
+                                
+                                if (loadedCount === totalParts) {
+                                    loadedEpParts[folderName] = parts;
+                                    resolve(parts);
+                                } else {
+                                    loadPart(index + 1);
+                                }
+                            };
+                            
+                            // 设置src开始加载
+                            img.src = partPath;
+                        };
+                        
+                        // 开始加载第一个部分
+                        loadPart(1);
+                    });
+                };
+                
+                fetchWithSignal(imageInfo.folder, 400).then(() => {
+                    // 预加载完成后，标记为已预加载
+                    preloadedImages.add(imageInfo.folder);
+                    
+                    // 延迟100ms后加载下一张，避免过多并发请求
+                    setTimeout(() => {
+                        // 从任务列表中移除已完成的任务
+                        const taskIndex = window.currentPreloadTasks.indexOf(task);
+                        if (taskIndex > -1) {
+                            window.currentPreloadTasks.splice(taskIndex, 1);
+                        }
+                        
+                        // 加载下一张图片
+                        loadNextImage();
+                    }, 100);
+                }).catch(err => {
+                    // 处理预加载失败，但继续加载队列中的下一张
+                    console.warn(`Preloading EP/${imageInfo.folder} failed:`, err.message !== 'Aborted' ? err : 'aborted');
+                    
+                    // 从任务列表中移除失败的任务
+                    const taskIndex = window.currentPreloadTasks.indexOf(task);
+                    if (taskIndex > -1) {
+                        window.currentPreloadTasks.splice(taskIndex, 1);
+                    }
+                    
+                    // 延迟100ms后加载下一张
+                    setTimeout(() => {
+                        loadNextImage();
+                    }, 100);
+                });
+            }
+            
+            // 开始加载队列中的第一张图片
+            loadNextImage();
+        }
+        
+        // 上一张图片
+        function showPrevImage() {
+            currentImageIndex = (currentImageIndex - 1 + totalImages) % totalImages;
+            openModal(currentImageIndex);
+            // 预加载新的当前图片的前后各两张
+            smartPreloadImages(currentImageIndex);
+        }
+
+        // 下一张图片
+        function showNextImage() {
+            currentImageIndex = (currentImageIndex + 1) % totalImages;
+            openModal(currentImageIndex);
+            // 预加载新的当前图片的前后各两张
+            smartPreloadImages(currentImageIndex);
+        }
+
+        // 页面加载时预加载第一张图片及其前后各两张
+        window.addEventListener('load', function() {
+            // 直接显示第一张图片的模态框
+            setTimeout(() => {
+                openModal(0);
+                // 预加载第一张图片及其前后各两张
+                smartPreloadImages(0);
+            }, 500); // 延迟500ms以确保页面完全加载
+        });
+
+        // 打开模态框
+        function openModal(index) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // 使用EP小块图片组合显示
+            let epFolder;
+            // 所有EP文件夹都使用400个部分（20x20网格）
+            const totalParts = 400;
+            
+            // 格式化为两位数的文件夹名（01-33）
+            epFolder = (index + 1).toString().padStart(2, '0');
+            
+            // 移除之前可能存在的EP容器
+            const existingEpModalContainer = document.querySelector('.ep-modal-container');
+            if (existingEpModalContainer) {
+                existingEpModalContainer.remove();
+            }
+            
+            // 设置模态框中EP图片的尺寸，保持2880:1670的比例
+            const aspectRatio = 2880 / 1670; // 设置宽高比为2880:1670
+            const maxWidth = window.innerWidth * 0.96; // 设置为窗口宽度的96%
+            const maxHeight = window.innerHeight * 0.96; // 高度不超过窗口高度的96%以确保居中
+            
+            // 根据宽高比和最大尺寸计算最终尺寸
+            let containerWidth, containerHeight;
+            if (maxWidth / aspectRatio <= maxHeight) {
+                // 宽度优先
+                containerWidth = Math.floor(maxWidth); // 强制转换为整数像素
+                containerHeight = Math.floor(maxWidth / aspectRatio); // 强制转换为整数像素
+            } else {
+                // 高度优先
+                containerHeight = Math.floor(maxHeight); // 强制转换为整数像素
+                containerWidth = Math.floor(maxHeight * aspectRatio); // 强制转换为整数像素
+            }
+            
+            // 创建加载动画元素
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'loading-spinner';
+            loadingSpinner.style.display = 'block'; // 默认显示加载动画
+            
+            // 创建EP图片容器（由多个小块图片组成）
+            const epModalContainer = createEpImageContainer(epFolder, totalParts, containerWidth, containerHeight, loadingSpinner);
+            epModalContainer.className = 'ep-modal-container';
+            epModalContainer.style.opacity = '1'; // 直接显示，不使用淡入效果
+            epModalContainer.style.position = 'relative';
+            epModalContainer.style.borderRadius = '0.7vw'; // 添加圆角效果
+            
+            // 添加到模态框
+            const modalContentWrapper = document.createElement('div');
+            modalContentWrapper.className = 'modal-content';
+            modalContentWrapper.appendChild(loadingSpinner); // 先添加加载动画
+            modalContentWrapper.appendChild(epModalContainer);
+            modal.appendChild(modalContentWrapper);
+            
+            // 监听所有小块图片加载完成
+            // 移除加载动画检查，直接显示
+        }
+
+
+
+        // 点击模态框背景关闭
+        // 禁用背景点击关闭
+
+
+
+
+
+        // 更新EP图片尺寸以适应窗口大小变化
+        function updateEpImageSize() {
+            const epModalContainer = document.querySelector('.ep-modal-container');
+            const modalContentWrapper = document.querySelector('.modal-content');
+            
+            if (epModalContainer && modalContentWrapper) {
+                // 获取当前EP图片信息
+                let folderName;
+                // 格式化为两位数的文件夹名（01-33）
+                folderName = (currentImageIndex + 1).toString().padStart(2, '0');
+                
+                // 计算新的尺寸，保持2880:1670的比例
+                const aspectRatio = 2880 / 1670; // 设置宽高比为2880:1670
+                const maxWidth = window.innerWidth * 0.96;
+                const maxHeight = window.innerHeight * 0.96; // 统一为96%高度以保持一致性
+                
+                // 根据宽高比和最大尺寸计算最终尺寸
+                let containerWidth, containerHeight;
+                if (maxWidth / aspectRatio <= maxHeight) {
+                    // 宽度优先
+                    containerWidth = Math.floor(maxWidth); // 强制转换为整数像素
+                    containerHeight = Math.floor(maxWidth / aspectRatio); // 强制转换为整数像素
+                } else {
+                    // 高度优先
+                    containerHeight = Math.floor(maxHeight); // 强制转换为整数像素
+                    containerWidth = Math.floor(maxHeight * aspectRatio); // 强制转换为整数像素
+                }
+                
+                // 更新容器尺寸
+                epModalContainer.style.width = `${containerWidth}px`;
+                epModalContainer.style.height = `${containerHeight}px`;
+                
+                // 所有EP文件夹统一使用20x20的网格布局
+                const cols = 20;
+                const rows = 20;
+                const partWidth = Math.floor(containerWidth / cols);
+                const partHeight = Math.floor(containerHeight / rows);
+                
+                // 重新计算实际容器尺寸，确保能被行列数整除
+                const actualContainerWidth = partWidth * cols;
+                const actualContainerHeight = partHeight * rows;
+                
+                // 更新容器尺寸为实际尺寸
+                epModalContainer.style.width = `${actualContainerWidth}px`;
+                epModalContainer.style.height = `${actualContainerHeight}px`;
+                
+                const partDivs = epModalContainer.querySelectorAll('[data-part-index]');
+                partDivs.forEach((div, index) => {
+                    div.style.width = `${partWidth}px`;
+                    div.style.height = `${partHeight}px`;
+                    div.style.left = `${(index % cols) * partWidth}px`;
+                    div.style.top = `${Math.floor(index / cols) * partHeight}px`;
+                });
+            }
+        }
+        
+        // 键盘导航
+        document.addEventListener('keydown', function(e) {
+            if (modal.classList.contains('active')) {
+                if (e.key === 'ArrowLeft') {
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    showNextImage();
+                }
+            }
+        });
+        
+        // 添加窗口大小改变的事件监听器
+        window.addEventListener('resize', updateEpImageSize);
+        
+        // 移除页面加载动画
+    </script>
+</body>
+</html>
